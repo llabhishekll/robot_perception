@@ -53,15 +53,18 @@ private:
   void goal_result_callback(const ClientGoalHandle::WrappedResult &result) {
     if (result.code == rclcpp_action::ResultCode::SUCCEEDED) {
       goal_done = true;
-      px = result.result->objects[0].object.primitive_poses[0].position.x;
-      py = result.result->objects[0].object.primitive_poses[0].position.y;
-      RCLCPP_INFO(this->get_logger(), "X : %f, Y : %f", px, py);
-      if (px >= 0.0) {
-        is_approachable = true;
-        RCLCPP_INFO(this->get_logger(), "is_approachable : true");
+      if (!result.result->objects.empty()) {
+        px = result.result->objects[0].object.primitive_poses[0].position.x;
+        py = result.result->objects[0].object.primitive_poses[0].position.y;
+        RCLCPP_INFO(this->get_logger(), "X : %f, Y : %f", px, py);
+        if (px >= 0.0) {
+          is_approachable = true;
+          RCLCPP_INFO(this->get_logger(), "is_approachable : `true`");
+        } else {
+          RCLCPP_WARN(this->get_logger(), "is_approachable : `false`");
+        }
       } else {
-        is_approachable = false;
-        RCLCPP_WARN(this->get_logger(), "is_approachable : false");
+        RCLCPP_WARN(this->get_logger(), "Goal passed, but no object detected!");
       }
     } else {
       RCLCPP_ERROR(this->get_logger(), "Goal failed!");
