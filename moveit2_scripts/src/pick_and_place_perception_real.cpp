@@ -181,6 +181,7 @@ int main(int argc, char *argv[]) {
     RCLCPP_INFO(LOGGER, "Target : X : %f, Y : %f", px, py);
   } else {
     RCLCPP_ERROR(LOGGER, "Shutting down as object is not approachable!");
+    rclcpp::shutdown();
     return 0;
   }
 
