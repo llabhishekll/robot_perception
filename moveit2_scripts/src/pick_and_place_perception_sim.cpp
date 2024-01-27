@@ -20,6 +20,8 @@ private:
   // member variables
   double px;
   double py;
+  double dx;
+  double dy;
   bool goal_done;
   bool is_approachable;
 
@@ -66,6 +68,8 @@ private:
       if (!result.result->objects.empty()) {
         px = result.result->objects[0].object.primitive_poses[0].position.x;
         py = result.result->objects[0].object.primitive_poses[0].position.y;
+        dx = result.result->objects[0].object.primitives[0].dimensions[0];
+        dy = result.result->objects[0].object.primitives[0].dimensions[1];
         RCLCPP_INFO(this->get_logger(), "X : %f, Y : %f", px, py);
         if (px >= 0.0) {
           is_approachable = true;
@@ -99,12 +103,14 @@ public:
 
   double get_position_x() {
     // return the detected object position x
-    return this->px;
+    double px_prime = (px / std::fabs(px)) * (std::fabs(px) + (dx / 2));
+    return std::ceil(px_prime * 100.0) / 100.0;
   }
 
   double get_position_y() {
     // return the detected object position y
-    return this->py;
+    double py_prime = (py / std::fabs(py)) * (std::fabs(py) + (dy / 2));
+    return std::ceil(py_prime * 100.0) / 100.0;
   }
 
   bool is_object_approachable() {
