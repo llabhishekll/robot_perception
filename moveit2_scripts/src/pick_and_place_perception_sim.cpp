@@ -79,6 +79,7 @@ private:
       }
     } else {
       RCLCPP_ERROR(this->get_logger(), "Goal failed!");
+      this->action_timer->reset();
     }
   }
 
@@ -110,7 +111,7 @@ public:
   double get_position_y() {
     // return the detected object position y
     double py_prime = (py / std::fabs(py)) * (std::fabs(py) + (dy / 2));
-    return std::ceil(py_prime * 100.0) / 100.0;
+    return std::ceil((py_prime * 2) * 100.0) / 100.0;
   }
 
   bool is_object_approachable() {

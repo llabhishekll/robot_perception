@@ -79,6 +79,7 @@ private:
       }
     } else {
       RCLCPP_ERROR(this->get_logger(), "Goal failed!");
+      this->action_timer->reset();
     }
   }
 
