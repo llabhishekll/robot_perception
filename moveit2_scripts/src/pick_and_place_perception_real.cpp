@@ -104,14 +104,14 @@ public:
 
   double get_position_x() {
     // return the detected object position x
-    double px_prime = (px / std::fabs(px)) * (std::fabs(px) + (dx / 2));
-    return std::ceil(px_prime * 100.0) / 100.0;
+    double px_prime = px;
+    return std::ceil(px_prime * 1000.0) / 1000.0;
   }
 
   double get_position_y() {
     // return the detected object position y
-    double py_prime = (py / std::fabs(py)) * (std::fabs(py) + (dy / 2));
-    return std::ceil(py_prime * 100.0) / 100.0;
+    double py_prime = py;
+    return std::ceil(py_prime * 1000.0) / 1000.0;
   }
 
   bool is_object_approachable() {
@@ -240,7 +240,7 @@ int main(int argc, char *argv[]) {
   // define waypoints
   std::vector<geometry_msgs::msg::Pose> waypoints_approach;
   waypoints_approach.push_back(target_pose);
-  target_pose.position.z -= 0.02;
+  target_pose.position.z -= 0.01;
   waypoints_approach.push_back(target_pose);
 
   // compute trajectory
@@ -272,7 +272,7 @@ int main(int argc, char *argv[]) {
 
   // define waypoints
   std::vector<geometry_msgs::msg::Pose> waypoints_retreat;
-  target_pose.position.z += 0.02;
+  target_pose.position.z += 0.01;
   waypoints_retreat.push_back(target_pose);
 
   // compute trajectory
@@ -282,6 +282,15 @@ int main(int argc, char *argv[]) {
   // position : retreat (using IK)
   move_group_tool->execute(trajectory_retreat);
   RCLCPP_INFO(LOGGER, "Plan passed : `retreat`");
+
+  // position : grasp
+  move_group_arm->setNamedTarget("grasp_left");
+  if (move_group_arm->plan(plan_arm) == SUCCESS) {
+    RCLCPP_INFO(LOGGER, "Plan passed : `grasp_right`");
+    move_group_arm->execute(plan_arm);
+  } else {
+    RCLCPP_ERROR(LOGGER, "Plan failed : `grasp_right`");
+  }
 
   // position : rotate
   move_group_arm->setNamedTarget("rotate");
