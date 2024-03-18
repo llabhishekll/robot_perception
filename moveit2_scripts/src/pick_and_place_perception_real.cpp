@@ -158,6 +158,7 @@ int main(int argc, char *argv[]) {
   state_tool->copyJointGroupPositions(joints_tool, positions_tool);
 
   // define planning interface
+  moveit::planning_interface::PlanningSceneInterface workspace_scene;
   moveit::planning_interface::MoveGroupInterface::Plan plan_arm;
   moveit::planning_interface::MoveGroupInterface::Plan plan_tool;
 
@@ -166,6 +167,36 @@ int main(int argc, char *argv[]) {
 
   moveit_msgs::msg::RobotTrajectory trajectory_approach;
   moveit_msgs::msg::RobotTrajectory trajectory_retreat;
+
+  // add collision object to the workspace scene
+  auto const table_collision_object = [frame_id =
+                                           move_group_arm->getPlanningFrame()] {
+    moveit_msgs::msg::CollisionObject collision_object;
+    collision_object.header.frame_id = frame_id;
+    collision_object.id = "table";
+    shape_msgs::msg::SolidPrimitive primitive;
+
+    // define box as collision object
+    primitive.type = primitive.BOX;
+    primitive.dimensions.resize(3);
+    primitive.dimensions[primitive.BOX_X] = 1.0;
+    primitive.dimensions[primitive.BOX_Y] = 0.5;
+    primitive.dimensions[primitive.BOX_Z] = 0.05;
+
+    // define the pose of the box (relative to the frame_id)
+    geometry_msgs::msg::Pose box_pose;
+    box_pose.position.x = 0.25;
+    box_pose.position.y = 0.125;
+    box_pose.position.z = -(0.025 + 0.001);
+    box_pose.orientation.w = 1.0;
+
+    collision_object.primitives.push_back(primitive);
+    collision_object.primitive_poses.push_back(box_pose);
+    collision_object.operation = collision_object.ADD;
+
+    return collision_object;
+  }();
+  workspace_scene.applyCollisionObject(table_collision_object);
 
   // check if object is found and moveit can start robot movement
   auto client = std::make_shared<GetPoseClient>();
@@ -231,7 +262,7 @@ int main(int argc, char *argv[]) {
   geometry_msgs::msg::Pose target_pose;
   target_pose.position.x = px;
   target_pose.position.y = py;
-  target_pose.position.z = 0.20;
+  target_pose.position.z = 0.25;
   target_pose.orientation.x = -1.0;
   target_pose.orientation.y = 0.00;
   target_pose.orientation.z = 0.00;
@@ -240,8 +271,11 @@ int main(int argc, char *argv[]) {
   // define waypoints
   std::vector<geometry_msgs::msg::Pose> waypoints_approach;
   waypoints_approach.push_back(target_pose);
-  target_pose.position.z -= 0.01;
-  waypoints_approach.push_back(target_pose);
+  // generate consecutive waypoints
+  for (int i = 0; i <= 5; i++) {
+    target_pose.position.z -= 0.01; // approach
+    waypoints_approach.push_back(target_pose);
+  }
 
   // compute trajectory
   auto f = move_group_arm->computeCartesianPath(
@@ -272,8 +306,11 @@ int main(int argc, char *argv[]) {
 
   // define waypoints
   std::vector<geometry_msgs::msg::Pose> waypoints_retreat;
-  target_pose.position.z += 0.01;
-  waypoints_retreat.push_back(target_pose);
+  // generate consecutive waypoints
+  for (int i = 0; i <= 5; i++) {
+    target_pose.position.z += 0.01; // retreat
+    waypoints_approach.push_back(target_pose);
+  }
 
   // compute trajectory
   auto b = move_group_arm->computeCartesianPath(
